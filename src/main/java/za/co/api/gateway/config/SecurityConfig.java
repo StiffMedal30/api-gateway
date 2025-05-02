@@ -26,7 +26,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Disable CSRF
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Stateless
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/user/login", "/api/user/register", "/api/user/password/reset").permitAll() // Allow these
+                        .requestMatchers(
+                                "/api/user/login",
+                                "/api/user/register",
+                                "/api/user/password/reset",
+                                "/api/user/account/activate",
+                                "/link",
+                                "/error",
+                                "/error/**").permitAll() // Allow these
                         .anyRequest().authenticated() // All else requires JWT
                 )
                 .addFilterBefore(jwtTokenFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter

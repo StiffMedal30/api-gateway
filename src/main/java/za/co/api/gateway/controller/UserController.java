@@ -50,6 +50,16 @@ public class UserController {
         }
     }
 
+    @PostMapping("/account/activate")
+    public ResponseEntity<?> activateAccount(@RequestBody Map<String, String> credentials) {
+        try {
+            return forwardToAuthService("http://" + USER_SERVICE + "/api/user/account/activate", credentials);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Activation failed: " + e.getMessage()));
+        }
+    }
+
     private ResponseEntity<?> forwardToAuthService(String url, Object body) {
         try {
             ResponseEntity<?> response = restTemplate.postForEntity(url, body, Map.class);

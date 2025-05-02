@@ -46,9 +46,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         boolean shouldNotFilter =
                 path.equals("/api/user/login") ||
                         path.equals("/api/user/register") ||
-                        path.equals("/api/user/password/reset");
+                        path.equals("/api-gateway/api/user/account/activate") ||
+                        path.equals("/api-gateway/api/user/password/reset") ||
+                        path.equals("/link") ||
+                        path.equals("/error");
 
-        System.out.println("Should not filter: " + shouldNotFilter + " for path: " + path);
+        if (shouldNotFilter) {
+            System.out.println("Skipping filter for path: " + path);
+        }
+
         return shouldNotFilter;
     }
 
