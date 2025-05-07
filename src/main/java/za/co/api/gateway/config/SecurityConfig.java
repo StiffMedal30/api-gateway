@@ -30,9 +30,7 @@ public class SecurityConfig {
                                 "/api/user/login",
                                 "/api/user/register",
                                 "/api/user/password/reset",
-                                "/api/user/account/activate",
-                                "/link",
-                                "/error",
+                                "/api/link",
                                 "/error/**").permitAll() // Allow these
                         .anyRequest().authenticated() // All else requires JWT
                 )
