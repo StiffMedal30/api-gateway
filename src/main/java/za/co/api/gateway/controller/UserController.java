@@ -14,16 +14,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/user")
-public class UserController {
-
-    public static final String USER_SERVICE = "user-service";
-    @Autowired
-    RestTemplate restTemplate;
+public class UserController extends BaseController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         try {
-            return forwardToAuthService("http://" + USER_SERVICE + "/api/user/login", credentials);
+            return forwardPostRequest("http://" + USER_SERVICE + "/api/user/login", credentials);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Login failed: " + e.getMessage()));
@@ -31,9 +27,9 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<?> register(@RequestBody Map<String, String> newUser) {
         try {
-            return forwardToAuthService("http://" + USER_SERVICE + "/api/user/register", credentials);
+            return forwardPostRequest("http://" + USER_SERVICE + "/api/user/register", newUser);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Registration failed: " + e.getMessage()));
@@ -41,22 +37,12 @@ public class UserController {
     }
 
     @PostMapping("/password/reset")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> credentials) {
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> newCredentials) {
         try {
-            return forwardToAuthService("http://" + USER_SERVICE + "/api/user/password/reset", credentials);
+            return forwardPostRequest("http://" + USER_SERVICE + "/api/user/password/reset", newCredentials);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Reset failed: " + e.getMessage()));
-        }
-    }
-
-    private ResponseEntity<?> forwardToAuthService(String url, Object body) {
-        try {
-            ResponseEntity<?> response = restTemplate.postForEntity(url, body, Map.class);
-            return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
-        } catch (HttpStatusCodeException ex) {
-            return ResponseEntity.status(ex.getStatusCode())
-                    .body(Map.of("error", ex.getResponseBodyAsString()));
         }
     }
 }

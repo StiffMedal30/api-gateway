@@ -21,6 +21,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -69,7 +70,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             } else {
-                logger.warn("JWT token is missing or invalid");
+                logger.error("JWT token is missing or invalid");
             }
 
         } catch (JwtException e) {
@@ -97,7 +98,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private boolean validateToken(String token) {
         try {
-            Key key = new SecretKeySpec(Base64.getDecoder().decode(SECRET), "HmacSHA256");
+            Key key = new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
 
             Jwts.parserBuilder()
                     .setSigningKey(key)
@@ -112,7 +113,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     private Claims getClaimsFromToken(String token) {
-        Key key = new SecretKeySpec(Base64.getDecoder().decode(SECRET), "HmacSHA256");
+        Key key = new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
 
         return Jwts.parserBuilder()
                 .setSigningKey(key)
