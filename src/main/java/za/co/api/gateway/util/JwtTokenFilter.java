@@ -3,6 +3,7 @@ package za.co.api.gateway.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,8 +26,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
-import java.util.ArrayList;
-import java.util.Base64;
+import java.util.List;
 
 @Component
 public class JwtTokenFilter extends OncePerRequestFilter {
@@ -58,19 +60,23 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain) throws ServletException, IOException {
         try {
             String token = getJwtTokenFromRequest(request);
+            System.out.println("Received token: " + token);
 
-            if (token != null && validateToken(token)) {
+            if (token != null && decodeToken(token)) {
                 Claims claims = getClaimsFromToken(token);
                 String username = claims.getSubject();
 
                 logger.debug("Authenticated user: {}", username);
 
-                UserDetails userDetails = new User(username, "", new ArrayList<>());
+                List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
+                UserDetails userDetails = new User(username, "", authorities);
+
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+
             } else {
-                logger.error("JWT token is missing or invalid");
+                logger.error("JWT token is missing or invalid {}", token);
             }
 
         } catch (JwtException e) {
@@ -96,18 +102,16 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private boolean validateToken(String token) {
+    private boolean decodeToken(String token) {
         try {
-            Key key = new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-
+            System.out.println("Secret length in bytes: " + SECRET.getBytes(StandardCharsets.UTF_8).length);
             Jwts.parserBuilder()
-                    .setSigningKey(key)
+                    .setSigningKey(Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8)))
                     .build()
                     .parseClaimsJws(token);
-
             return true;
         } catch (JwtException e) {
-            logger.warn("JWT validation failed: {}", e.getMessage());
+            logger.warn("JWT validation failed: {} - token: {}", e.getMessage(), token);
             return false;
         }
     }
@@ -120,5 +124,14 @@ public class JwtTokenFilter extends OncePerRequestFilter {
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
+    }
+
+    public String getEmail() {
+        String token = getJwtTokenFromRequest((HttpServletRequest) SecurityContextHolder.getContext().getAuthentication());
+        if (token != null) {
+            Claims claims = getClaimsFromToken(token);
+            return claims.getSubject();
+        }
+        return null;
     }
 }
